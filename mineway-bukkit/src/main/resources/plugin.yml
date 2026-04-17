@@ -1,0 +1,21 @@
+name: Mineway
+version: "1.0.0"
+main: io.mineway.bukkit.MinewayPlugin
+api-version: "1.13"
+description: "Mineway — expose your server to the internet via secure tunnel"
+authors: [Mineway]
+website: https://mineway.cloud
+
+commands:
+  mineway:
+    description: Mineway commands
+    usage: /mineway <status|reload|stop|start>
+    permission: mineway.admin
+    aliases: [mct]
+
+permissions:
+  mineway.admin:
+    description: Access Mineway admin commands
+    default: op
+
+folia-supported: true

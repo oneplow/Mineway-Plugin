@@ -1,0 +1,26 @@
+modLoader   = "javafml"
+loaderVersion = "[2,)"
+license     = "MIT"
+
+[[mods]]
+modId       = "mineway"
+version     = "1.0.0"
+displayName = "Mineway"
+description = """
+Expose your Minecraft server to the internet via secure tunnel.
+No public IP required. Works with Bedrock via GeyserMC.
+"""
+
+[[dependencies.mineway]]
+    modId        = "neoforge"
+    type         = "required"
+    versionRange = "[20.4,)"
+    ordering     = "NONE"
+    side         = "SERVER"
+
+[[dependencies.mineway]]
+    modId        = "minecraft"
+    type         = "required"
+    versionRange = "[1.20.4,)"
+    ordering     = "NONE"
+    side         = "SERVER"

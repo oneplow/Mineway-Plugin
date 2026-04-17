@@ -1,0 +1,22 @@
+dependencies {
+    implementation project(":mineway-core")
+    compileOnly "io.github.waterfallmc:waterfall-api:1.20-R0.1-SNAPSHOT"
+    // Velocity API (compileOnly เพราะใช้ reflection check ตอน runtime)
+    compileOnly "com.velocitypowered:velocity-api:3.3.0-SNAPSHOT"
+    implementation "org.yaml:snakeyaml:2.2"
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+jar {
+    archiveFileName = "Mineway-Proxy-${version}.jar"
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

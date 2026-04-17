@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "mineway",
+  "version": "1.0.0",
+  "name": "Mineway",
+  "description": "Expose your Minecraft server to the internet via secure tunnel",
+  "authors": [
+    "Mineway"
+  ],
+  "contact": {
+    "homepage": "https://mineway.cloud"
+  },
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "server": [
+      "io.mineway.fabric.MinewayFabric"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.14.0",
+    "fabric-api": "*",
+    "minecraft": ">=1.19"
+  }
+}

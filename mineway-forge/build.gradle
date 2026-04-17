@@ -1,0 +1,36 @@
+plugins {
+    id "net.minecraftforge.gradle" version "6.0.+"
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+minecraft {
+    mappings channel: "official", version: "1.20.4"
+    runs {
+        server {
+            workingDirectory project.file("run")
+            mods { mineway { source sourceSets.main } }
+        }
+    }
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:1.20.4-49.0.49"
+    implementation project(":mineway-core")
+    implementation "org.yaml:snakeyaml:2.2"
+}
+
+jar {
+    archiveFileName = "Mineway-Forge-${version}.jar"
+    manifest {
+        attributes(["Specification-Title": "mineway", "Implementation-Version": version])
+    }
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

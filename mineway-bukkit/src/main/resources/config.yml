@@ -1,0 +1,17 @@
+# ──────────────────────────────────────────
+#  Mineway Plugin Configuration
+# ──────────────────────────────────────────
+
+# API Key จากหน้า Dashboard ที่ https://mineway.cloud
+# สร้าง Key ใหม่ได้ที่ Settings > API Keys
+api_key: ""
+
+
+# เชื่อมต่อใหม่อัตโนมัติถ้าหลุด
+auto_reconnect: true
+
+# กี่วินาทีก่อน reconnect
+reconnect_delay: 5
+
+# แสดง debug log (สำหรับ troubleshoot)
+debug: false

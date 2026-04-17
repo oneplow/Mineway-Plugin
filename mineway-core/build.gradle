@@ -1,0 +1,17 @@
+dependencies {
+    // Java-WebSocket — รองรับ Java 8+, ไม่ต้องพึ่ง platform ใด
+    implementation "org.java-websocket:Java-WebSocket:1.5.4"
+
+    // JSON — ใช้ parse message กับ tunnel server
+    implementation "com.google.code.gson:gson:2.10.1"
+}
+
+jar {
+    // รวม dependencies ไว้ใน jar เดียว (fat jar) เพื่อให้ bukkit/fabric ใช้ได้
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

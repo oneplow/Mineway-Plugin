@@ -1,0 +1,15 @@
+# ──────────────────────────────────────────
+#  Mineway Mod Configuration
+#  ไฟล์นี้อยู่ที่: config/mineway/config.yml
+# ──────────────────────────────────────────
+
+# API Key จากหน้า Dashboard ที่ https://mineway.cloud
+api_key: ""
+
+
+# Auto reconnect เมื่อ tunnel หลุด
+auto_reconnect: true
+reconnect_delay: 5
+
+# Debug logging
+debug: false

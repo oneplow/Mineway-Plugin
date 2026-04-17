@@ -1,0 +1,44 @@
+allprojects {
+    group   = "io.mineway"
+    version = "1.0.0"
+}
+
+// subproject ที่ใช้ java plugin ธรรมดา (ไม่มี loom/neoforge)
+configure([project(":mineway-core"), project(":mineway-bukkit"), project(":mineway-proxy")]) {
+    apply plugin: "java"
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    repositories {
+        mavenCentral()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
+        maven { url "https://repo.papermc.io/repository/maven-public/" }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = "UTF-8"
+    }
+}
+
+// repositories สำหรับทุก subproject
+subprojects {
+    repositories {
+        mavenCentral()
+        maven { url "https://repo.papermc.io/repository/maven-public/" }
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
+        // Mirrors
+        maven { url "https://bmclapi2.bangbang93.com/maven/" }
+        maven { url "https://maven.fabricmc.net/" }
+        maven { url "https://maven.neoforged.net/releases/" }
+        maven { url "https://files.minecraftforge.net/maven/" }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = "UTF-8"
+    }
+}

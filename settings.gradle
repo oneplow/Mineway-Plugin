@@ -1,0 +1,22 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+        maven { url "https://maven.fabricmc.net/" }
+        // Forge mirror (BMCLAPI) — ใช้แทน maven.minecraftforge.net ที่เข้าไม่ได้
+        maven { url "https://bmclapi2.bangbang93.com/maven/" }
+        maven { url "https://files.minecraftforge.net/maven/" }
+        maven { url "https://maven.neoforged.net/releases/" }
+    }
+}
+
+rootProject.name = "mineway-plugin"
+
+include(
+    "mineway-core",
+    "mineway-bukkit",
+    "mineway-proxy",
+    //"mineway-fabric",
+    "mineway-forge",
+    "mineway-neoforge"
+)

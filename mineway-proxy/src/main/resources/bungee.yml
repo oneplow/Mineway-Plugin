@@ -1,0 +1,5 @@
+name: Mineway
+version: "1.0.0"
+main: io.mineway.proxy.bungee.MinewayBungee
+author: Mineway
+description: "Mineway proxy plugin for BungeeCord/Waterfall"
