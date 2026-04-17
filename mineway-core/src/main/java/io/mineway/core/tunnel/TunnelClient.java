@@ -42,6 +42,7 @@ public class TunnelClient {
     private final AtomicBoolean reconnecting = new AtomicBoolean(false);
 
     private ScheduledExecutorService scheduler;
+    private volatile long lastMessageTime = 0;
 
     // ข้อมูลที่ได้จาก auth_ok
     private volatile String tunnelId;
@@ -62,6 +63,17 @@ public class TunnelClient {
             t.setDaemon(true);
             return t;
         });
+
+        // Health check task (replaces WebSocketClient's ConnectionLostChecker thread)
+        scheduler.scheduleAtFixedRate(() -> {
+            if (ws != null && ws.isOpen()) {
+                if (System.currentTimeMillis() - lastMessageTime > 45_000) {
+                    platform.logWarn("No heartbeat from server. Connection might be dead. Reconnecting...");
+                    ws.close(); // Triggers onClose, which will schedule reconnect
+                }
+            }
+        }, 15, 15, TimeUnit.SECONDS);
+
         connect();
     }
 
@@ -135,6 +147,7 @@ public class TunnelClient {
 
     // ─── Handle messages from tunnel server ──────────────────────────
     private void handleMessage(String raw) {
+        lastMessageTime = System.currentTimeMillis();
         JsonObject msg;
         try {
             msg = gson.fromJson(raw, JsonObject.class);
@@ -153,10 +166,14 @@ public class TunnelClient {
                 boolean isCustomPort = msg.has("isCustomPort") && msg.get("isCustomPort").getAsBoolean();
                 
                 String displayAddress = isCustomPort ? hostname : (hostname + ":" + tcpPort);
-                platform.logInfo("Tunnel established successfully.");
-                platform.logInfo("  Remote Address: " + displayAddress);
-                platform.logInfo("  Java (TCP):     " + displayAddress);
-                platform.logInfo("  Bedrock (UDP):  " + displayAddress);
+                
+                platform.logInfo("--------------------------------------------------");
+                platform.logInfo(" Secure Tunnel Established Successfully!");
+                platform.logInfo(" Node:      " + hostname);
+                platform.logInfo(" Java:      " + displayAddress);
+                platform.logInfo(" Bedrock:   " + displayAddress);
+                platform.logInfo(" Dashboard: https://mineway.cloud/");
+                platform.logInfo("--------------------------------------------------");
                 break;
 
             case "auth_failed":
@@ -325,12 +342,13 @@ public class TunnelClient {
 
         MWWebSocket(URI uri) {
             super(uri);
-            setConnectionLostTimeout(40); // วินาที — ตรงกับ ping interval ของ server
+            setConnectionLostTimeout(0); // Disabled builtin checker to avoid extra thread
         }
 
         @Override
         public void onOpen(ServerHandshake handshake) {
             platform.logInfo("Establishing secure tunnel connection...");
+            lastMessageTime = System.currentTimeMillis();
             // ส่ง auth message ทันที
             JsonObject auth = new JsonObject();
             auth.addProperty("key", config.getApiKey());
