@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class TunnelClient {
 
-    private final TunnelConfig config;
+    private TunnelConfig config;
     private final PlatformAdapter platform;
     private final Gson gson = new Gson();
 
@@ -118,6 +118,15 @@ public class TunnelClient {
         platform.logWarn("Reconnecting in " + delaySeconds + " seconds...");
 
         scheduler.schedule(() -> {
+            try {
+                TunnelConfig latestConfig = platform.getLatestConfig();
+                if (latestConfig != null) {
+                    this.config = latestConfig;
+                }
+            } catch (Exception e) {
+                platform.logWarn("Failed to auto-reload config before reconnect: " + e.getMessage());
+            }
+
             reconnecting.set(false);
             connect();
         }, delaySeconds, TimeUnit.SECONDS);
@@ -164,12 +173,13 @@ public class TunnelClient {
                 hostname = msg.get("hostname").getAsString();
                 tcpPort = msg.get("tcpPort").getAsInt();
                 boolean isCustomPort = msg.has("isCustomPort") && msg.get("isCustomPort").getAsBoolean();
+                String nodeName = msg.has("nodeName") ? msg.get("nodeName").getAsString() : "Unknown Node";
                 
                 String displayAddress = isCustomPort ? hostname : (hostname + ":" + tcpPort);
                 
                 platform.logInfo("--------------------------------------------------");
                 platform.logInfo(" Secure Tunnel Established Successfully!");
-                platform.logInfo(" Node:      " + hostname);
+                platform.logInfo(" Node:      " + nodeName);
                 platform.logInfo(" Java:      " + displayAddress);
                 platform.logInfo(" Bedrock:   " + displayAddress);
                 platform.logInfo(" Dashboard: https://mineway.cloud/");
@@ -270,7 +280,7 @@ public class TunnelClient {
                 if ("udp".equalsIgnoreCase(protocol)) {
                     // Bedrock UDP
                     java.net.DatagramSocket sock = new java.net.DatagramSocket();
-                    pipe = new UdpPipe(connId, sock, 19132, 
+                    pipe = new UdpPipe(connId, sock, config.getTargetUdpPort(), 
                             (id, data) -> sendMcData(id, data),
                             (id) -> {
                                 pipes.remove(id);
@@ -279,7 +289,7 @@ public class TunnelClient {
                 } else {
                     // Java TCP
                     Socket sock = new Socket();
-                    sock.connect(new InetSocketAddress("127.0.0.1", 25565), 3000);
+                    sock.connect(new InetSocketAddress("127.0.0.1", config.getTargetTcpPort()), 3000);
                     pipe = new PlayerPipe(connId, sock,
                             (id, data) -> sendMcData(id, data),
                             (id) -> {
@@ -302,7 +312,8 @@ public class TunnelClient {
 
                 platform.logDebug("Pipe opened: " + connId + " [" + protocol + "]");
             } catch (Exception e) {
-                platform.logWarn("Unable to reach local Minecraft server on port 25565: " + e.getMessage());
+                int errorPort = "udp".equalsIgnoreCase(protocol) ? config.getTargetUdpPort() : config.getTargetTcpPort();
+                platform.logWarn("Unable to reach local target server on port " + errorPort + ": " + e.getMessage());
                 sendMcDisconnect(connId);
             }
         });

@@ -29,4 +29,9 @@ public interface PlatformAdapter {
 
     /** Version ของ MC server */
     String getServerVersion();
+
+    /** ดึง config ล่าสุด (ใช้ตอน auto-reconnect) */
+    default io.mineway.core.config.TunnelConfig getLatestConfig() {
+        return null;
+    }
 }

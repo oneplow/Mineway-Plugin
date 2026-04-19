@@ -18,5 +18,6 @@ include(
     "mineway-proxy",
     //"mineway-fabric",
     "mineway-forge",
-    "mineway-neoforge"
+    "mineway-neoforge",
+    "mineway-cli"
 )

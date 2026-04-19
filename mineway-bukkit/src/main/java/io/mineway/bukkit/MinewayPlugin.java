@@ -129,10 +129,25 @@ public class MinewayPlugin extends JavaPlugin implements PlatformAdapter, Listen
     @Override public String getPlatformName()   { return "Bukkit/Spigot/Paper"; }
     @Override public String getServerVersion()  { return getServer().getVersion(); }
 
+    @Override
+    public TunnelConfig getLatestConfig() {
+        reloadConfig();
+        TunnelConfig newConfig = buildConfig();
+        try {
+            newConfig.validate();
+            return newConfig;
+        } catch (IllegalStateException e) {
+            getLogger().warning("Auto-reload config failed validation: " + e.getMessage());
+            return null; // Return null so the existing config continues to be used
+        }
+    }
+
     // ─── Helper ───────────────────────────────────────────────────────
     private TunnelConfig buildConfig() {
         return TunnelConfig.builder()
             .apiKey(getConfig().getString("api_key", ""))
+            .targetTcpPort(getConfig().getInt("target_tcp_port", 25565))
+            .targetUdpPort(getConfig().getInt("target_udp_port", 19132))
             .autoReconnect(getConfig().getBoolean("auto_reconnect", true))
             .reconnectDelaySeconds(getConfig().getInt("reconnect_delay", 5))
             .debug(getConfig().getBoolean("debug", false))

@@ -6,6 +6,10 @@
 # สร้าง Key ใหม่ได้ที่ Settings > API Keys
 api_key: ""
 
+# [Optional] ระบุเป้าหมายพอร์ต หากเซิร์ฟเวอร์ของคุณไม่ได้ใช้พอร์ตเริ่มต้น
+# ค่าเริ่มต้น: Java = 25565, Bedrock = 19132
+target_tcp_port: 25565
+target_udp_port: 19132
 
 # เชื่อมต่อใหม่อัตโนมัติถ้าหลุด
 auto_reconnect: true

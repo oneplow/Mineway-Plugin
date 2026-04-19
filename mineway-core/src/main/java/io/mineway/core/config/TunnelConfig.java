@@ -15,12 +15,16 @@ public class TunnelConfig {
     private final boolean autoReconnect;
     private final int    reconnectDelaySeconds;
     private final boolean debug;
+    private final int    targetTcpPort;
+    private final int    targetUdpPort;
 
     private TunnelConfig(Builder b) {
         this.apiKey                = b.apiKey;
         this.autoReconnect         = b.autoReconnect;
         this.reconnectDelaySeconds = b.reconnectDelaySeconds;
         this.debug                 = b.debug;
+        this.targetTcpPort         = b.targetTcpPort;
+        this.targetUdpPort         = b.targetUdpPort;
 
         // Decode self-contained Host and Port from API Key
         String decodedHost = b.serverHost; // Fallback default
@@ -58,6 +62,8 @@ public class TunnelConfig {
     public boolean isAutoReconnect()          { return autoReconnect; }
     public int     getReconnectDelaySeconds() { return reconnectDelaySeconds; }
     public boolean isDebug()                  { return debug; }
+    public int     getTargetTcpPort()         { return targetTcpPort; }
+    public int     getTargetUdpPort()         { return targetUdpPort; }
 
     public String getWebSocketUri() {
         return (shouldUseSecureWebSocket() ? "wss://" : "ws://") + serverHost + ":" + serverPort;
@@ -65,9 +71,15 @@ public class TunnelConfig {
 
     private boolean shouldUseSecureWebSocket() {
         String normalizedHost = serverHost == null ? "" : serverHost.trim().toLowerCase();
-        return !(normalizedHost.equals("localhost")
+        // Local connections never use SSL
+        if (normalizedHost.equals("localhost")
             || normalizedHost.equals("127.0.0.1")
-            || normalizedHost.equals("0.0.0.0"));
+            || normalizedHost.equals("0.0.0.0")) {
+            return false;
+        }
+        // Only use wss:// for standard SSL ports (behind Caddy/nginx)
+        // Non-standard ports (like 8765) connect directly to mineway-server without SSL
+        return serverPort == 443 || serverPort == 8443;
     }
 
     /** Validate — throw ถ้าข้อมูลไม่ครบ */
@@ -93,6 +105,8 @@ public class TunnelConfig {
         private boolean autoReconnect         = true;
         private int     reconnectDelaySeconds = 5;
         private boolean debug                 = false;
+        private int     targetTcpPort         = 25565; // Default Java port
+        private int     targetUdpPort         = 19132; // Default Bedrock port
 
         public Builder apiKey(String v)                { this.apiKey = v; return this; }
         public Builder serverHost(String v)            { this.serverHost = v; return this; }
@@ -100,6 +114,8 @@ public class TunnelConfig {
         public Builder autoReconnect(boolean v)        { this.autoReconnect = v; return this; }
         public Builder reconnectDelaySeconds(int v)    { this.reconnectDelaySeconds = v; return this; }
         public Builder debug(boolean v)                { this.debug = v; return this; }
+        public Builder targetTcpPort(int v)            { this.targetTcpPort = v; return this; }
+        public Builder targetUdpPort(int v)            { this.targetUdpPort = v; return this; }
 
         public TunnelConfig build() { return new TunnelConfig(this); }
     }
