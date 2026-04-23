@@ -27,28 +27,39 @@ public class TunnelConfig {
         this.targetUdpPort         = b.targetUdpPort;
 
         // Decode self-contained Host and Port from API Key
+        // NEW FORMAT: mw_live_<base64url(host:tcpPort)>.<hmac_signature>
+        // OLD FORMAT: mw_live_<base64url(host:tcpPort:httpPort|secret)>
         String decodedHost = b.serverHost; // Fallback default
         int decodedPort = b.serverPort;    // Fallback default
 
         if (this.apiKey != null && (this.apiKey.startsWith("mw_live_") || this.apiKey.startsWith("mw_test_"))) {
             try {
-                String prefix = this.apiKey.startsWith("mw_live_") ? "mw_live_" : "mw_test_";
-                String encodedPayload = this.apiKey.substring(prefix.length());
+                String keyPrefix = this.apiKey.startsWith("mw_live_") ? "mw_live_" : "mw_test_";
+                String rest = this.apiKey.substring(keyPrefix.length());
+
+                // Check for new format (contains '.' separator between payload and signature)
+                String encodedPayload;
+                int dotIndex = rest.indexOf('.');
+                if (dotIndex != -1) {
+                    // New format — payload is before the dot, signature after (we ignore signature)
+                    encodedPayload = rest.substring(0, dotIndex);
+                } else {
+                    // Old format — entire rest is the encoded payload
+                    encodedPayload = rest;
+                }
+
                 byte[] decodedBytes = Base64.getUrlDecoder().decode(encodedPayload);
                 String payload = new String(decodedBytes, StandardCharsets.UTF_8);
-                
-                // Format: <host>:<port>|<secret>
-                String[] parts = payload.split("\\|");
-                if (parts.length >= 2) {
-                    String[] hostPort = parts[0].split(":");
-                    if (hostPort.length >= 2) {
-                        decodedHost = hostPort[0];
-                        decodedPort = Integer.parseInt(hostPort[1]);
-                    }
+
+                // New format: "host:port" | Old format: "host:port:httpPort|secret"
+                String hostPortPart = payload.contains("|") ? payload.split("\\|")[0] : payload;
+                String[] hostPorts = hostPortPart.split(":");
+                if (hostPorts.length >= 2) {
+                    decodedHost = hostPorts[0];
+                    decodedPort = Integer.parseInt(hostPorts[1]); // TCP port
                 }
             } catch (Exception e) {
-                // Ignore decoding error. This means it's an old key format or corrupted.
-                // It will fallback to the defaults.
+                // Ignore decoding error — fallback to builder defaults
             }
         }
 
@@ -65,22 +76,8 @@ public class TunnelConfig {
     public int     getTargetTcpPort()         { return targetTcpPort; }
     public int     getTargetUdpPort()         { return targetUdpPort; }
 
-    public String getWebSocketUri() {
-        return (shouldUseSecureWebSocket() ? "wss://" : "ws://") + serverHost + ":" + serverPort;
-    }
-
-    private boolean shouldUseSecureWebSocket() {
-        String normalizedHost = serverHost == null ? "" : serverHost.trim().toLowerCase();
-        // Local connections never use SSL
-        if (normalizedHost.equals("localhost")
-            || normalizedHost.equals("127.0.0.1")
-            || normalizedHost.equals("0.0.0.0")) {
-            return false;
-        }
-        // Only use wss:// for standard SSL ports (behind Caddy/nginx)
-        // Non-standard ports (like 8765) connect directly to mineway-server without SSL
-        return serverPort == 443 || serverPort == 8443;
-    }
+    // Raw TCP — no WebSocket URI needed anymore.
+    // Plugin connects directly via socket to serverHost:serverPort
 
     /** Validate — throw ถ้าข้อมูลไม่ครบ */
     public void validate() {

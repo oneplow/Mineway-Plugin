@@ -2,6 +2,7 @@ package io.mineway.core.tunnel;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -10,31 +11,32 @@ import java.util.function.Consumer;
  * PlayerPipe — TCP connection ระหว่าง Tunnel ↔ MC server สำหรับผู้เล่น 1 คน
  *
  * ทิศทาง:
- *   TunnelClient.handleMessage("player_data") → writeToMc() → MC server
- *   MC server → read loop → sendToTunnel callback → TunnelClient.sendMcData()
+ * TunnelClient.handleMessage("player_data") → writeToMc() → MC server
+ * MC server → read loop → sendToTunnel callback → TunnelClient.sendMcData()
  */
 public class PlayerPipe implements Pipe {
 
     private static final int BUFFER_SIZE = 32 * 1024; // 32KB
 
-    private final String  connId;
-    private final Socket  socket;
-    private final BiConsumer<String, byte[]> onDataFromMc;  // (connId, data)
-    private final Consumer<String>           onClose;       // (connId)
+    private final String connId;
+    private final Socket socket;
+    private final OutputStream out; // ← เพิ่ม
+    private final BiConsumer<String, byte[]> onDataFromMc; // (connId, data)
+    private final Consumer<String> onClose; // (connId)
 
     private volatile boolean closed = false;
     private Thread readThread;
 
     public PlayerPipe(
-        String  connId,
-        Socket  socket,
-        BiConsumer<String, byte[]> onDataFromMc,
-        Consumer<String>           onClose
-    ) {
-        this.connId      = connId;
-        this.socket      = socket;
+            String connId,
+            Socket socket,
+            BiConsumer<String, byte[]> onDataFromMc,
+            Consumer<String> onClose) throws IOException {
+        this.connId = connId;
+        this.socket = socket;
+        this.out = socket.getOutputStream(); // ← cache ไว้เลย
         this.onDataFromMc = onDataFromMc;
-        this.onClose     = onClose;
+        this.onClose = onClose;
     }
 
     /** เริ่ม read loop (background thread) */
@@ -63,10 +65,11 @@ public class PlayerPipe implements Pipe {
 
     /** เขียนข้อมูลจาก tunnel เข้า MC server */
     public void writeToMc(byte[] data) {
-        if (closed || socket.isClosed()) return;
+        if (closed || socket.isClosed())
+            return;
         try {
-            socket.getOutputStream().write(data);
-            socket.getOutputStream().flush();
+            out.write(data); // ← ใช้ cached stream
+            out.flush();
         } catch (IOException e) {
             close();
             onClose.accept(connId);
@@ -74,10 +77,16 @@ public class PlayerPipe implements Pipe {
     }
 
     public void close() {
-        if (closed) return;
+        if (closed)
+            return;
         closed = true;
-        try { socket.close(); } catch (IOException ignored) {}
+        try {
+            socket.close();
+        } catch (IOException ignored) {
+        }
     }
 
-    public boolean isClosed() { return closed; }
+    public boolean isClosed() {
+        return closed;
+    }
 }

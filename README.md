@@ -100,7 +100,8 @@ Permission: `mineway.admin` (default: op)
 
 ## Protocol กับ Tunnel Server
 
-Plugin เชื่อม WebSocket → ส่ง `{"type":"auth","key":"mw_live_..."}` → รับ `{"type":"auth_ok","hostname":"abc123.mineway.io"}` → tunnel พร้อม
+Plugin เลิกใช้ WebSocket แล้วเพื่อลด Overhead (ไม่มี JSON, ไม่มี Base64, ไม่มี HTTP overhead)
+Plugin จะเชื่อมต่อผ่าน **Raw TCP Socket** → ส่ง `AUTH` frame แบบไบนารี → รับ `AUTH_OK` แบบไบนารี → tunnel พร้อมทำงาน และส่งข้อมูลเกมเป็นไบนารีโดยตรงทำให้ปิงลดลงมาก
 
 ## Bedrock (GeyserMC)
 
