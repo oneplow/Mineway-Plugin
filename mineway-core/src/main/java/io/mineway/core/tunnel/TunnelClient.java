@@ -49,6 +49,7 @@ public class TunnelClient {
     private static final int  BACKOFF_MAX_SECONDS  = 300;
     /** ตัวคูณแต่ละรอบ */
     private static final double BACKOFF_MULTIPLIER = 2.0;
+    private static final int MAX_PENDING_CHUNKS_PER_PIPE = 256;
 
     private TunnelConfig config;
     private final PlatformAdapter platform;
@@ -127,7 +128,7 @@ public class TunnelClient {
                 sock.connect(new InetSocketAddress(config.getServerHost(), config.getServerPort()), 10_000);
 
                 socket       = sock;
-                outputStream = new BufferedOutputStream(sock.getOutputStream(), 64 * 1024);
+                outputStream = sock.getOutputStream();
                 lastMessageTime = System.currentTimeMillis();
 
                 // เชื่อมสำเร็จ — reset suppress flag เพื่อให้ log ได้ปกติรอบหน้า
@@ -230,7 +231,6 @@ public class TunnelClient {
                 if (payload != null && payloadLen > 0) {
                     out.write(payload);
                 }
-                out.flush();
             } catch (IOException e) {
                 platform.logDebug("[Mineway] Write error: " + e.getMessage());
             }
@@ -262,7 +262,6 @@ public class TunnelClient {
                 System.arraycopy(connIdBytes, 0, header, 5, 8);
                 out.write(header);
                 out.write(data);
-                out.flush();
             } catch (IOException e) {
                 platform.logDebug("[Mineway] Write error: " + e.getMessage());
             }
@@ -432,6 +431,12 @@ public class TunnelClient {
                 } else {
                     java.util.List<byte[]> pending = pendingData.get(connId);
                     if (pending != null) {
+                        if (pending.size() >= MAX_PENDING_CHUNKS_PER_PIPE) {
+                            platform.logWarn("[Mineway] Too much buffered data for " + connId + ". Closing pipe.");
+                            pendingData.remove(connId);
+                            sendMcDisconnect(connId);
+                            break;
+                        }
                         pending.add(data);
                         platform.logDebug("[Mineway] Buffered data for " + connId + " (" + data.length + " bytes)");
                     }
